@@ -1,0 +1,14 @@
+# byte-compiled files 
+__pycache__
+
+# C extensions
+*.so
+
+# distribution and packaging
+build/
+dist/
+*.egg-info/
+
+# other
+/virtualenv
+/opening_book/??-output

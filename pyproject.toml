@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "Cython"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyquantik"
+version = "2023.3"
+authors = [
+    { name="Maksym Neyra-Nesterenko", email="contact@mneyrane.com" },
+]
+license = {file="LICENSE"}
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.urls]
+"Homepage" = "https://github.com/mneyrane/Quantik-solver"
+
+[tool.setuptools.packages.find]
+include= ["quantik*"]

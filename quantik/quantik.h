@@ -26,6 +26,7 @@ __QT_decode_action() function.
 
 #define QT_N_ROWS          4 // board rows
 #define QT_N_COLS          4 // board columns
+#define QT_B_SIZE         16 // board size
 #define QT_N_CLR_SHAPES    8 // number of coloured shapes
 #define QT_N_SHAPES        4 // number of shapes
 #define QT_N_ACTIONS      64 // number of actions
@@ -62,7 +63,8 @@ extern uint8_t QT_minimax(QT_State *s, QT_MM_Results *results, uint8_t depth, ui
 extern void QT_print_state(const QT_State *s);
 
 // helper functions
-extern QT_Action __QT_decode_action(uint8_t a);
+extern QT_Action __QT_decode_action(uint8_t e);
+extern uint8_t __QT_encode_action(QT_Action a);
 extern uint8_t __QT_get_opp_player(uint8_t player);
 extern uint8_t __QT_encode_tile(uint8_t player, uint8_t shape);
 extern uint8_t __QT_decode_player_from_tile(uint8_t tile);

@@ -231,16 +231,16 @@ void QT_print_state(const QT_State *s) {
                     str[k] = '.';
                     break;
                 case 1:
-                    str[k] = (player) ? 'A' : 'a';
+                    str[k] = (player) ? 'X' : 'x';
                     break;
                 case 2:
-                    str[k] = (player) ? 'E' : 'e';
-                    break;
-                case 3:
                     str[k] = (player) ? 'O' : 'o';
                     break;
+                case 3:
+                    str[k] = (player) ? 'I' : 'i';
+                    break;
                 case 4:
-                    str[k] = (player) ? 'U' : 'u';
+                    str[k] = (player) ? 'V' : 'v';
                     break;
             }
             
@@ -261,7 +261,11 @@ void QT_print_state(const QT_State *s) {
 // helper functions
 
 QT_Action __QT_decode_action(uint8_t e) {
-    return (QT_Action) { .x = (e & 12) >> 2, .y = e & 3, .shape = ((e & 48) >> 4) + 1 };
+    return (QT_Action) { .x = (e >> 2) & 3, .y = e & 3, .shape = ((e >> 4) & 3) + 1 };
+}
+
+uint8_t __QT_encode_action(QT_Action a) {
+    return a.y | (a.x << 2) | ((a.shape - 1) << 4);
 }
 
 uint8_t __QT_get_opp_player(uint8_t player) {
