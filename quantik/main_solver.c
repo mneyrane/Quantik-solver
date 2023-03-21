@@ -65,7 +65,7 @@ void evaluate_win_ratios(Solver* sv);
 int main() {
     // create and configure solver
     Solver* solver = initialize_solver();
-    if (! load_opening_book(solver)) {
+    if (!load_opening_book(solver)) {
         return EXIT_FAILURE;
     }
 
@@ -75,8 +75,9 @@ int main() {
     do {
         memset(&buffer, 0, BUF_SIZE);
         printf("Please enter an input option ('h' to list): ");
-        fgets(buffer, BUF_SIZE, stdin);
-        running = process_user_input(buffer, solver);
+        running = process_user_input(
+            fgets(buffer, BUF_SIZE, stdin), solver);
+        clearerr(stdin);
     } while (running);
 
     cleanup_solver(solver); 
@@ -117,8 +118,6 @@ uint8_t load_opening_book(Solver* sv) {
     sv->_opening_book = malloc(num_bytes * sizeof(uint8_t));
     
     // load opening book to memory 
-    uint8_t b;
-    uint32_t i = 0;
     for (uint32_t i = 0; i < num_bytes; i++) {
         sv->_opening_book[i] = fgetc(fp);
     }
@@ -140,7 +139,13 @@ void cleanup_solver(Solver* sv) {
 }
 
 uint8_t process_user_input(char* buffer, Solver* sv) {
-    char c = buffer[0];
+    if (!buffer) {
+        printf("\n");
+        return FLAG_RUN;
+    }
+
+    char c;
+    c = (buffer) ? buffer[0] : '\n';
     
     switch (c) {
         case 'h':
@@ -215,7 +220,11 @@ void forward_step(Solver* sv) {
     uint8_t digits;
     char buffer[BUF_SIZE];
     memset(&buffer, 0, BUF_SIZE);
-    fgets(buffer, BUF_SIZE, stdin);
+    
+    if (!fgets(buffer, BUF_SIZE, stdin)) {
+        printf("\n");
+        return;
+    }
     
     // check for correct number of digits 
     digits = 0;
@@ -309,6 +318,7 @@ void print_shape_count(Solver* sv) {
 
 void print_summary(Solver* sv) {
     // TO DO ...
+    printf("%p\n", sv); // stub
     printf("Not implemented.\n");
 }
 
@@ -345,6 +355,7 @@ void print_action_evaluations(Solver* sv) {
 
 void print_win_ratios(Solver* sv) {
     // TO DO ...
+    printf("%p\n", sv); // stub
     printf("Not implemented.\n");
 }
 
@@ -514,5 +525,6 @@ void _evaluate_via_minimax(Solver* sv) {
 }
 
 void evaluate_win_ratios(Solver* sv) {
-
+    printf("%p\n", sv); // stub
+    printf("Not implemented.\n");
 }

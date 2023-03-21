@@ -379,7 +379,7 @@ uint8_t compare_states(QT_State *s1, QT_State *s2) {
     }
 
     for (uint8_t k = 0; k < QT_N_CLR_SHAPES; k++) {
-        if (s1->shapes[k] != s1->shapes[k]) {
+        if (s1->shapes[k] != s2->shapes[k]) {
             return 0;
         }
     }

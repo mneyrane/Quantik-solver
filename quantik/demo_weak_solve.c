@@ -29,5 +29,5 @@ int main() {
     result = QT_minimax(&s, &r, 1, s.player);
     
     printf("result: %i\n", result);
-    printf("nodes visited: %lli\n", r.nodes_visited);
+    printf("nodes visited: %lu\n", r.nodes_visited);
 }

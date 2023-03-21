@@ -1,0 +1,4 @@
+include quantik/quantik.pxd
+include quantik/pyquantik.pyx
+include quantik/quantik.c
+include quantik/quantik.h
