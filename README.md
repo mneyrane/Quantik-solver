@@ -3,7 +3,8 @@
 Implementation of a strong solver for [Quantik](https://en.gigamic.com/game/quantik), a 2-player adversarial abstract strategy game by Nouri Khalifa and published by Gigamic.
 The Quantik solver is implemented as a simple-to-use terminal program, and is currently supported to run on Linux.
 
-The usage help and instructions are provided in the program itself by entering the command `h`.
+To download the solver, check out the [releases page](https://github.com/mneyrane/Quantik-solver/releases).
+The help and instructions on usage are provided in the program itself by entering the command `h`.
 
 ## Developer notes
 
