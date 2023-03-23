@@ -11,6 +11,10 @@ authors = [
 license = {file="LICENSE"}
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = [
+    "sympy",
+    "networkx",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/mneyrane/Quantik-solver"
