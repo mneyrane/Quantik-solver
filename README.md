@@ -19,7 +19,7 @@ To use Python bindings for Quantik (e.g. to create the opening book manually), o
 ### Building the solver
 
 To build and run the Quantik solver, simply clone the repository and run `make quantik_solver` from the repository root. 
-This creates the executable `quantik_solver`, which should be run together with `opening book
+This creates the executable `quantik_solver`, which should be run together with `opening book`.
 *Note that to be able to run the solver, the executable must reside in the same directory as* `opening_book.bin`.
 
 ### Building the opening book
