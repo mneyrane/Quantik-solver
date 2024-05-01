@@ -39,6 +39,7 @@ typedef struct QT_State {
     uint8_t player;
     uint8_t board[QT_N_ROWS][QT_N_COLS];
     uint8_t shapes[QT_N_CLR_SHAPES];
+    uint8_t depth;
 } QT_State;
 
 typedef struct QT_Action {
@@ -46,10 +47,6 @@ typedef struct QT_Action {
     uint8_t y;
     uint8_t shape;
 } QT_Action;
-
-typedef struct QT_MM_Results {
-    uint64_t nodes_visited;
-} QT_MM_Results;
 
 // game functions
 extern void QT_initialize_state(QT_State *s);
@@ -59,7 +56,7 @@ extern void QT_backward_step(QT_State *s, QT_Action a);
 extern uint8_t QT_check_completion_win(const QT_State *s, QT_Action a);
 
 // other
-extern uint8_t QT_minimax(QT_State *s, QT_MM_Results *results, uint8_t depth, uint8_t player);
+extern uint8_t QT_minimax(QT_State *s, uint8_t player);
 extern void QT_print_state(const QT_State *s);
 
 // helper functions

@@ -67,7 +67,8 @@ void test_QT_check_valid_move() {
          {16+1,   0,   4,   0},
          {   0,   4,   0,16+2}},
         {2,1,2,0,
-         1,1,1,2}
+         1,1,1,2},
+        0
     };
 
     uint8_t valid_moves[QT_N_ACTIONS] = {
@@ -113,7 +114,8 @@ void test_QT_forward_step() {
          {0,0,0,0},
          {0,0,0,0}},
         {2,1,2,2, 
-         2,2,2,2}
+         2,2,2,2},
+        0
     };
 
     QT_forward_step(&s,a);
@@ -128,7 +130,8 @@ void test_QT_forward_step() {
          {16+1,0,0,0},
          {0,0,0,0}},
         {2,1,2,2, 
-         1,2,2,2}
+         1,2,2,2},
+        0
     };
 
     QT_forward_step(&s,a);
@@ -145,7 +148,8 @@ void test_QT_backward_step() {
          {0,0,4,16+1},
          {0,0,0,16+2}},
         {2,2,1,1, 
-         1,1,2,2}
+         1,1,2,2},
+        0
     };
 
     // undo a move
@@ -157,7 +161,8 @@ void test_QT_backward_step() {
          {0,0,4,0},
          {0,0,0,16+2}},
         {2,2,1,1, 
-         2,1,2,2}
+         2,1,2,2},
+        0
     };
 
     QT_backward_step(&s,a);
@@ -172,7 +177,8 @@ void test_QT_backward_step() {
          {0,0,4,0},
          {0,0,0,16+2}},
         {2,2,2,1, 
-         2,1,2,2}
+         2,1,2,2},
+        0
     };
 
     QT_backward_step(&s,a);
@@ -191,7 +197,8 @@ void test_QT_check_completion_win() {
          {0,0,0,0},
          {0,0,0,0}},
         {1,1,2,2,
-         2,2,1,1}
+         2,2,1,1},
+        0
     };
 
     a = (QT_Action) {.x = 1, .y = 2, .shape = 4};
@@ -205,7 +212,8 @@ void test_QT_check_completion_win() {
          {0,0,0,16+3},
          {0,0,0,16+2}},
         {1,2,2,1,
-         2,1,1,2}
+         2,1,1,2},
+        0
     };
 
     a = (QT_Action) {.x = 2, .y = 3, .shape = 3};
@@ -220,7 +228,8 @@ void test_QT_check_completion_win() {
          {0,0,0,0},
          {0,0,0,0}},
         {1,2,1,2,
-         2,1,2,1}
+         2,1,2,1},
+        0
     };
 
     a = (QT_Action) {.x = 0, .y = 1, .shape = 2};
@@ -234,7 +243,8 @@ void test_QT_check_completion_win() {
          {0,0,0,0},
          {0,0,0,0}},
         {1,2,1,2,
-         2,1,2,1}
+         2,1,2,1},
+        0
     };
 
     a = (QT_Action) {.x = 0, .y = 3, .shape = 2};
@@ -248,7 +258,8 @@ void test_QT_check_completion_win() {
          {1,16+2,0,0},
          {3,16+4,0,0}},
         {1,2,1,2,
-         2,1,2,1}
+         2,1,2,1},
+        0
     };
 
     a = (QT_Action) {.x = 2, .y = 1, .shape = 2};
@@ -262,7 +273,8 @@ void test_QT_check_completion_win() {
          {0,0,1,16+2},
          {0,0,3,16+4}},
         {1,2,1,2,
-         2,1,2,1}
+         2,1,2,1},
+        0
     };
 
     a = (QT_Action) {.x = 2, .y = 3, .shape = 2};

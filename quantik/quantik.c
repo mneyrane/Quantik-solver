@@ -19,6 +19,8 @@ void QT_initialize_state(QT_State *s) {
     for (uint8_t i = 0; i < QT_N_CLR_SHAPES; i++) {
         s->shapes[i] = QT_N_SHAPE_REPS;
     }
+
+    s->depth = 0;
 }
 
 uint8_t QT_check_valid_move(const QT_State *s, QT_Action a) {
@@ -85,11 +87,13 @@ void QT_forward_step(QT_State *s, QT_Action a) {
     s->board[a.x][a.y] = __QT_encode_tile(s->player, a.shape);
     s->shapes[QT_N_SHAPES*(s->player) + a.shape - 1] -= 1;
     s->player = __QT_get_opp_player(s->player); 
+    s->depth += 1;
 }
 
 void QT_backward_step(QT_State *s, QT_Action a) {
     // Undo a move.
     //
+    s->depth -= 1;
     s->player = __QT_get_opp_player(s->player);
     s->shapes[QT_N_SHAPES*(s->player) + a.shape - 1] += 1;
     s->board[a.x][a.y] = 0;
@@ -149,14 +153,12 @@ uint8_t QT_check_completion_win(const QT_State *s, QT_Action a) {
 
 // other
 
-uint8_t QT_minimax(QT_State *s, QT_MM_Results *results, uint8_t depth, uint8_t player) {
+uint8_t QT_minimax(QT_State *s, uint8_t player) {
     QT_Action a;
     uint8_t value;
-
-    results->nodes_visited += 1;
     
     // check if there is a winning move this turn
-    if (depth >= 3) {
+    if (s->depth >= 3) { // the game can never end on the first 3 moves
         uint8_t game_over = 0, num_invalid_moves = 0;
         
         // loop through all actions 
@@ -177,6 +179,7 @@ uint8_t QT_minimax(QT_State *s, QT_MM_Results *results, uint8_t depth, uint8_t p
             }
         }
 
+        // no legal moves, current player loses
         if (num_invalid_moves == QT_N_ACTIONS) {
             return !player; // 0 if maximizing, 1 o.w.
         } 
@@ -192,10 +195,10 @@ uint8_t QT_minimax(QT_State *s, QT_MM_Results *results, uint8_t depth, uint8_t p
             QT_forward_step(s,a);
 
             if (player) {
-                value = QT_minimax(s, results, depth+1, 0);
+                value = QT_minimax(s, 0);
             }
             else {
-                value = QT_minimax(s, results, depth+1, 1);
+                value = QT_minimax(s, 1);
             }
             
             QT_backward_step(s,a);

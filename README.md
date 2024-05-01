@@ -1,12 +1,31 @@
 # Quantik solver
 
-Implementation of a strong solver for [Quantik](https://en.gigamic.com/game/quantik), a 2-player adversarial abstract strategy game by Nouri Khalifa and published by Gigamic.
-The Quantik solver is implemented as a simple-to-use terminal program, and is currently supported to run on Linux.
-
+Implementation of a solver for [Quantik](https://en.gigamic.com/game/quantik), a 2-player adversarial abstract strategy game by Nouri Khalifa and published by Gigamic.
 To download the solver, check out the [releases page](https://github.com/mneyrane/Quantik-solver/releases).
-The help and instructions on usage are provided in the program itself by entering the command `h`.
+The solver is interacted with a simple-to-use command-line interface, and is currently supported to run on Linux.
+The usage help and instructions are provided in the program itself by entering the command `h`.
+
+
+## Clarifications
+
+
+### What exactly is meant by "solver"?
+
+Our solver *strongly solves* Quantik, that is, it computes a winning strategy (if the current player to move has one) starting from any legal board position, under practical time and space constraints.
+In our case, from any board position, determining actions that force a win takes less than a second on a standard desktop computer!
+
+### How does the solver carry out its evaluation?
+
+The heart of the solver consists of two ideas.
+The first is a pruned minimax algorithm to efficiently evaluate winning and losing moves.
+The second is a precomputation of such an evaluation for all early game states and caching the results into an opening book.
+This on its own sounds expensive, but one can exploit symmetry (board rotations, board reflections, special column and row swaps, permuting piece shapes) to limit the search to a subset of states.
+The same symmetries can be used to make efficient storage and querying of said states.
+Unfortunately, due to my preoccupation with other activities, a technical writeup of the aforementioned ideas have been postponed indefinitely.
+
 
 ## Developer notes
+
 
 ### Requirements
 
@@ -19,7 +38,7 @@ To use Python bindings for Quantik (e.g. to create the opening book manually), o
 ### Building the solver
 
 To build and run the Quantik solver, simply clone the repository and run `make quantik_solver` from the repository root. 
-This creates the executable `quantik_solver`, which should be run together with `opening book`.
+This creates the executable `quantik_solver`, which should be run together with `opening book
 *Note that to be able to run the solver, the executable must reside in the same directory as* `opening_book.bin`.
 
 ### Building the opening book

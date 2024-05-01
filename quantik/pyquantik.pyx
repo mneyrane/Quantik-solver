@@ -59,20 +59,13 @@ cdef class State:
 
     cpdef uint8_t minimax(self):
         cdef quantik.QT_State s_local
-        cdef quantik.QT_MM_Results res_stub
-        cdef uint8_t i, j, depth, player
+        cdef uint8_t player
 
         s_local = self._state[0]
 
-        depth = 0
-        for i in range(N_ROWS):
-            for j in range(N_COLS):
-                if (self._state[0].board[i][j] != 0):
-                    depth += 1
-
         player = self._state[0].player
 
-        return quantik.QT_minimax(&s_local, &res_stub, depth, player)
+        return quantik.QT_minimax(&s_local, player)
 
     def get_board(self):
         board = bytearray(B_SIZE)

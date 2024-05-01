@@ -7,7 +7,7 @@
 // loop constants
 #define FLAG_EXIT 0         
 #define FLAG_RUN 1          
-#define BUF_SIZE 16         // input buffer size
+#define BUF_SIZE 8          // input buffer size
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
 
 // opening book constants
@@ -33,7 +33,6 @@ typedef struct Solver {
     uint8_t valid_actions[QT_N_ACTIONS];
     uint8_t action_evaluations[QT_N_ACTIONS];
     SolverStatus status;
-    uint8_t _depth;
     uint8_t* _opening_book;
     uint8_t* _symmetries;
     uint8_t* _eval_table;
@@ -49,6 +48,7 @@ uint8_t process_user_input(char* buffer, Solver* sv);
 void print_help();
 void forward_step(Solver* sv);
 void undo_step(Solver* sv);
+void reset_solver(Solver* sv);
 void print_action_history(Solver *sv);
 void print_valid_actions(Solver* sv);
 void print_board(Solver* sv);
@@ -57,6 +57,7 @@ void print_action_evaluations(Solver* sv);
 void print_legend();
 
 // helper functions
+void evaluate_and_score_current_position(Solver* sv);
 void evaluate_valid_actions(Solver* sv);
 void _evaluate_via_book(Solver* sv);
 void _evaluate_via_minimax(Solver *sv);
@@ -66,6 +67,11 @@ void _condition_prints(char c, Solver *sv, void (*f)(Solver*));
 
 int main() {
     Solver* solver = initialize_solver();
+
+    if (!solver) {
+        return EXIT_FAILURE;
+    }
+
     if (!load_opening_book(solver)) {
         cleanup_solver(solver);
         return EXIT_FAILURE;
@@ -73,6 +79,8 @@ int main() {
 
     char buffer[BUF_SIZE];
     uint8_t running;
+
+    printf("*!* Quantik ANALYZER *!* -- written by mneyrane\n");
 
     do {
         memset(&buffer, 0, BUF_SIZE);
@@ -93,10 +101,16 @@ int main() {
 
 Solver* initialize_solver() {
     Solver* sv = malloc(sizeof(Solver));
-    QT_initialize_state(&(sv->state));
-    sv->status = ACTIVE; 
-    sv->_depth = 0;
-    sv->_opening_book = NULL;
+
+    if (!sv) {
+        perror("Solver malloc() failed");
+    }
+    else {
+        QT_initialize_state(&(sv->state));
+        sv->status = ACTIVE;
+        sv->_opening_book = NULL;
+    }
+
     return sv; 
 }
 
@@ -119,7 +133,8 @@ uint8_t load_opening_book(Solver* sv) {
     sv->_opening_book = malloc(num_bytes * sizeof(uint8_t));
 
     if (!(sv->_opening_book)) {
-        eprintf("Failed to allocate memory for opening book.\n");
+        perror("Opening book malloc() failed");
+        fclose(fp);
         return 0;
     }
     
@@ -149,8 +164,7 @@ uint8_t process_user_input(char* buffer, Solver* sv) {
         return FLAG_RUN;
     }
 
-    char c;
-    c = (buffer) ? buffer[0] : '\n';
+    char c = buffer[0];
     
     switch (c) {
         case 'h':
@@ -164,6 +178,9 @@ uint8_t process_user_input(char* buffer, Solver* sv) {
             break;
         case 'u':
             undo_step(sv);
+            break;
+        case 'r':
+            reset_solver(sv);
             break;
         case 'a':
             print_action_history(sv);
@@ -204,6 +221,7 @@ void print_help() {
         "\n    q - quit the application"
         "\n    f - input an action"
         "\n    u - undo previous action"
+        "\n    r - reset to initial state"
         "\nPrinting:"
         "\n    a - print action history"
         "\n    v - print valid actions"
@@ -216,7 +234,7 @@ void print_help() {
 }
 
 void forward_step(Solver* sv) {
-    printf("Enter an action (format: [row][col][shape], 0 <= [*] < 4): ");
+    printf("Enter an action (format: [shape][x][y], 1 <= [*] <= 4), ignored if empty: ");
     
     uint8_t digits;
     char buffer[BUF_SIZE];
@@ -224,6 +242,10 @@ void forward_step(Solver* sv) {
     
     if (!fgets(buffer, BUF_SIZE, stdin)) {
         printf("\n");
+        return;
+    }
+
+    if (buffer[0] == '\n') {
         return;
     }
     
@@ -252,22 +274,21 @@ void forward_step(Solver* sv) {
         if (digits == 3) { break; }
     }
 
-    if (!(idxs[0] >= 0 && idxs[0] < 4 && 
-          idxs[1] >= 0 && idxs[1] < 4 && 
-          idxs[2] >= 0 && idxs[2] < 4)) {
-        printf("Invalid action input; digits should be 0, 1, 2, or 3.\n");
+    if (!(idxs[0] >= 1 && idxs[0] <= 4 && 
+          idxs[1] >= 1 && idxs[1] <= 4 && 
+          idxs[2] >= 1 && idxs[2] <= 4)) {
+        printf("Invalid action input; digits should be 1, 2, 3, or 4.\n");
         return;
     }
 
     // process valid input
-    QT_Action a = { .x = idxs[0], .y = idxs[1], .shape = idxs[2]+1 };
+    QT_Action a = { .x = idxs[1] - 1, .y = idxs[2] - 1, .shape = idxs[0] };
     if (QT_check_valid_move(&(sv->state), a)) {
+        sv->action_stack[sv->state.depth] = a;
         QT_forward_step(&(sv->state), a);
-        sv->action_stack[sv->_depth] = a;
-        sv->_depth += 1;
 
         if (QT_check_completion_win(&(sv->state), a)) {
-            printf("Game ended - player %d wins by region completion!\n", !(sv->state.player));
+            printf("Game ended - player %d wins by region completion!\n", !(sv->state.player) + 1);
             sv->status = END_COMPLETION;
         }
         else {
@@ -280,7 +301,7 @@ void forward_step(Solver* sv) {
                 }
             }
             if (num_invalid_moves == QT_N_ACTIONS) {
-                printf("Game ended - player %d has no legal moves!\n", sv->state.player);
+                printf("Game ended - player %d has no legal moves!\n", (sv->state.player) + 1);
                 sv->status = END_NO_ACTIONS;
             }
         }
@@ -291,28 +312,34 @@ void forward_step(Solver* sv) {
 }
 
 void undo_step(Solver* sv) {
-    if (sv->_depth == 0) {
+    if (sv->state.depth == 0) {
         printf("No actions to undo.\n");
     }
     else {
-        sv->_depth -= 1;
         sv->status = ACTIVE;
-        QT_Action a = sv->action_stack[sv->_depth];
+        QT_Action a = sv->action_stack[(sv->state.depth) - 1];
         QT_backward_step(&(sv->state), a);
     }
 }
 
+void reset_solver(Solver* sv) {
+    QT_initialize_state(&(sv->state));
+    sv->status = ACTIVE;
+    printf("Game reset to its initial state.\n");
+}
+
 void print_action_history(Solver *sv) {
-    if (sv->_depth == 0) {
+    if (sv->state.depth == 0) {
         printf("No pieces have been played yet.\n");
         return;
     }
 
     QT_Action a;
-    for (uint8_t d = 0; d < sv->_depth; d++) {
+    for (uint8_t d = 0; d < sv->state.depth; d++) {
+        sv->status = ACTIVE;
         a = sv->action_stack[d];
-        printf("%d:%d%d%d", d, a.x, a.y, a.shape - 1);
-        (d < sv->_depth - 1) ? printf(" ") : printf("\n");
+        printf("%2d:%d.%d%d", d + 1, a.shape, a.x + 1, a.y + 1);
+        (d < (sv->state.depth) - 1) ? printf(" ") : printf("\n");
     }
 }
 
@@ -355,16 +382,16 @@ void print_board(Solver* sv) {
                     putchar('.');
                     break;
                 case 1:
-                    putchar('0');
-                    break;
-                case 2:
                     putchar('1');
                     break;
-                case 3:
+                case 2:
                     putchar('2');
                     break;
-                case 4:
+                case 3:
                     putchar('3');
+                    break;
+                case 4:
+                    putchar('4');
                     break;
             }
 
@@ -375,19 +402,29 @@ void print_board(Solver* sv) {
         putchar(']');
         putchar('\n');
     }
+
+    if (sv->status == END_COMPLETION) {
+        printf("Game over - player %d won by region completion.\n", !(sv->state.player) + 1);
+    }
+    else if (sv->status == END_NO_ACTIONS) {
+        printf("Game over - player %d has no legal moves.\n", (sv->state.player) + 1);
+    }
+    else {
+        printf("It is currently player %d's turn.\n", (sv->state.player) + 1);
+    }
 }
 
 void print_shape_count(Solver* sv) {
-    printf("0 shapes {");
+    printf("Player 1's shapes: {");
     for (uint8_t i = 0; i < QT_N_SHAPES; i++) {
-        printf("%d:%d", i, sv->state.shapes[i]);
+        printf("%d:%d", i + 1, sv->state.shapes[i]);
         if (i < QT_N_SHAPES - 1) { printf(", "); }
     }
     printf("}\n");
     
-    printf("1 shapes {");
+    printf("Player 2's shapes: {");
     for (uint8_t i = 0; i < QT_N_SHAPES; i++) {
-        printf("%d:%d", i, sv->state.shapes[i + QT_N_SHAPES]);
+        printf("%d:%d", i + 1, sv->state.shapes[i + QT_N_SHAPES]);
         if (i < QT_N_SHAPES - 1) { printf(", "); }
     }
     printf("}\n");
@@ -421,27 +458,29 @@ void print_action_evaluations(Solver* sv) {
             printf("] ");
         }
         printf("\n");
-    }   
+    }
 }
 
 void print_legend() {
-    printf("Action history (a):"
-    "\n    Format 'm:xys' where m is the move number, x and y are the board"
-    "\n    coordinates and s is the shape. The values match that of command 'f',"
-    "\n    which are [x][y][s], 0 <= [*] < 4."
+    printf(
+    "\nAction history (a):"
+    "\n    Moves are represented in the format 'm:s.xy' where m is the move number,"
+    "\n    x and y are the row and column positions (respectively), and s is the"
+    "\n    shape. The values of s, x and y are used in the 'f' command, which expects"
+    "\n    an input of [s][x][y], 1 <= [*] <= 4."
     "\n"
-    "Board (b):"
+    "\nBoard (b):"
     "\n    ' .' : empty tile"
-    "\n    ' n' : shape n from player 0"
-    "\n    '*n' : shape n from player 1"
+    "\n    ' n' : shape n from player 1"
+    "\n    '*n' : shape n from player 2"
     "\n"
-    "Player shape counts (s):"
+    "\nPlayer shape counts (s):"
     "\n    Format is 's:c', where s is the shape and c is the count."
     "\n"
-    "Valid actions (v) and action evaluations (e):"
-    "\n    Here the boards from left to right correspond to shapes 0, 1, etc."
-    "\n    and each tile informs placement and win conditions for the respective"
-    "\n    shape."
+    "\nValid actions (v) and action evaluations (e):"
+    "\n    Here the boards from left to right correspond to shapes 1, 2, etc."
+    "\n    respectively, and each tile informs placement and win conditions for"
+    "\n    the respective shape."
     "\n    '+'  : valid tile"
     "\n    '.'  : invalid tile"
     "\n    'w'  : current player can force a win"
@@ -457,7 +496,7 @@ void print_legend() {
 //
 
 void evaluate_valid_actions(Solver* sv) {
-    if (sv->_depth <= EVAL_MAX_DEPTH) {
+    if (sv->state.depth <= EVAL_MAX_DEPTH) {
         _evaluate_via_book(sv);
     }
     else {
@@ -472,7 +511,7 @@ void _evaluate_via_book(Solver* sv) {
     
     uint8_t max_shape_idx = 0;
 
-    for (uint8_t i = 0; i < sv->_depth; i++) {
+    for (uint8_t i = 0; i < sv->state.depth; i++) {
         uint8_t idx = (sv->action_stack[i]).shape - 1;
         if (distinct_shapes[idx] == 0) {
             distinct_shapes[idx] = 1;
@@ -490,17 +529,14 @@ void _evaluate_via_book(Solver* sv) {
     }
 
     // search for board permutation
-    // _sp : shape permuted, _bp : board permuted
-    QT_Action m_sp[EVAL_MAX_DEPTH], m_bp[EVAL_MAX_DEPTH];
+    // _sp : shape permuted
+    QT_Action m_sp[EVAL_MAX_DEPTH];
     
     memcpy(m_sp, sv->action_stack, EVAL_MAX_DEPTH * sizeof(QT_Action));
     
-    for (uint8_t i = 0; i < sv->_depth; i++) {
+    for (uint8_t i = 0; i < sv->state.depth; i++) {
         m_sp[i].shape = shape_perm[m_sp[i].shape-1] + 1;
     }
-
-    memcpy(m_bp, m_sp, EVAL_MAX_DEPTH * sizeof(QT_Action));
-
 
     for (uint32_t b = 0; b < EVAL_BYTES; b += EVAL_CHUNK_SIZE) {
         // check if queried table depth matches the current depth
@@ -512,12 +548,12 @@ void _evaluate_via_book(Solver* sv) {
             table_depth++;
         }
 
-        if (table_depth != sv->_depth) {
+        if (table_depth != sv->state.depth) {
             goto end_current_eval;
         }
         
         // check if queried table shapes match our permuted action stack shapes
-        for (uint8_t d = 0; d < sv->_depth; d++) {
+        for (uint8_t d = 0; d < sv->state.depth; d++) {
             QT_Action a = __QT_decode_action(sv->_eval_table[b+d]);
             if (a.shape != m_sp[d].shape) {
                 goto end_current_eval;
@@ -525,7 +561,7 @@ void _evaluate_via_book(Solver* sv) {
         }
         
         for (uint32_t p = 0; p < SYMM_BYTES; p += SYMM_CHUNK_SIZE) {
-            for (uint8_t d = 0; d < sv->_depth; d++) {
+            for (uint8_t d = 0; d < sv->state.depth; d++) {
                 uint8_t z0, zp, xp, yp;
                 QT_Action a;
 
@@ -584,8 +620,7 @@ void _evaluate_via_minimax(Solver* sv) {
                 sv->action_evaluations[e] = !(s.player);
             }
             else { 
-                QT_MM_Results r = {0};
-                sv->action_evaluations[e] = QT_minimax(&s, &r, sv->_depth, s.player);
+                sv->action_evaluations[e] = QT_minimax(&s, s.player);
             }
             QT_backward_step(&s,a);
         }
